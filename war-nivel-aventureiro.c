@@ -14,11 +14,40 @@ struct Territorio {
     int tropas;
 };
 
+//CABEÇALHO
+void inicio() {
+    printf(" ----------------------------------- \n");
+    printf(" --------------- WAR --------------- \n");
+    printf(" ----------------------------------- \n\n");
+}
+
 // função para limpar o buffer de entrada
 void LimparBufferDeEntrada() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
+
+//FUNÇÃO PARA CRIAR MUNDOS
+struct Territorio *criaMundo(int *total) {
+    printf("Digite a quantidade de territórios do jogo (mín. 2): ");
+    scanf("%d", total);
+    if (*total < 2) {
+        printf("O número de territórios deve ser 2 ou mais.");
+        return NULL;
+    }
+    LimparBufferDeEntrada();
+    
+    //Alocando dinamicamente
+    struct Territorio *mundo = calloc(*total, sizeof(struct Territorio));
+
+    //Verificando se a alocação deu certo
+    if (mundo == NULL) {
+        printf("Falha na alocação de memória.");
+    }
+
+    return mundo;
+
+};
 
 //FUNÇÃO PARA CADASTRAR TERRITORIOS
 void cadastrarTerritorios(struct Territorio *mundo, int total) {
@@ -71,14 +100,11 @@ int verificarVencedor(struct Territorio *mundo, int total) {
         return 0; // ainda não há vencedor, cores diferentes
         }
     }
-
-    exibirMapa(mundo, total);
-    printf("\nO Exército %s conquistou todos os territórios e É O VENCEDOR!!!\n\n FIM DE JOGO", corReferencia);
     return 1; //Fim de jogo
 }
 
 //FUNÇÃO DE ATAQUE E ATUALIZAÇÃO DO MAPA
-void atacar(struct Territorio *mundo, int total) {
+int atacar(struct Territorio *mundo, int total) {
     exibirMapa(mundo, total);
     int iAtacante, iDefensor;
     printf("\n====================================\n");
@@ -88,7 +114,7 @@ void atacar(struct Territorio *mundo, int total) {
     scanf("%d", &iAtacante);
     if (iAtacante == 0){
         printf("Saindo da fase de ataque... ");
-        return;
+        return 1;
     }
     printf("Escolha o território defensor: ");
     scanf("%d", &iDefensor);
@@ -99,12 +125,18 @@ void atacar(struct Territorio *mundo, int total) {
     //VALIDAÇÕES DA ENTRADA
     if (iAtacante < 1 || iAtacante > total || iDefensor < 1 || iDefensor > total || iAtacante == iDefensor) {
     printf("Escolha inválida. Tente novamente.\n");
-    return;
+    return 0;
     }
 
     //ATRIBUINDO OS NUMEROS DIGITADOS AOS TERRITORIOS
     struct Territorio *atacante = &mundo[iAtacante - 1];
     struct Territorio *defensor = &mundo[iDefensor - 1];
+
+    //VALIDANDO SE OS DOIS TERRITÓRIOS SÃO DE EXÉRCITOS DIFERENTES
+    if (strcmp(atacante->cor, defensor->cor) == 0) {
+        printf("Os dois territórios estão sob domínio do mesmo exército. Escolha novamente.\n");
+        return 0;  // reinicia a fase de ataque
+    }
     
     //ROLANDO OS DADOS E MOSTRANDO OS RESULTADOS
     int dadoAtacante = rand() % 6 + 1;
@@ -136,7 +168,7 @@ void atacar(struct Territorio *mundo, int total) {
     printf("\nPressione Enter para contninuar... ");
     LimparBufferDeEntrada();
 
-    return;
+    return 0;
 }
 
 //FUNÇÃO PARA LIBERAR MEMÓRIA ALOCADA DINAMICAMENTE
@@ -148,26 +180,17 @@ void liberarMundo(struct Territorio *mundo) {
 //FUNÇÃO PRINCIPAL 
 int main() {
     srand(time(NULL));
+
     //Criando um vetor para o jogo
     struct Territorio *mundo;
     int TotalTerritorios = 0; //variável para armazenar o número de territórios
 
-    //CRIANDO TERRITÓRIOS E ALOCANDO MEMÓRIA DINAMICAMENTE
-    printf(" ----- WAR -----\n");
-    printf("Digite a quantidade de territórios do jogo (mín. 2): ");
-    scanf("%d", &TotalTerritorios);
-    if (TotalTerritorios == 0 || TotalTerritorios == 1) {
-        printf("O número de territórios deve ser 2 ou mais.");
-        return 1;
-    }
-    LimparBufferDeEntrada();
-    
-    //Alocando dinamicamente
-    mundo = (struct Territorio *) calloc(TotalTerritorios, sizeof(struct Territorio));
+    //Cabeçalho do jogo
+    inicio();
 
-    //Verificando se a alocação deu certo
+    //CRIANDO TERRITÓRIOS E ALOCANDO MEMÓRIA DINAMICAMENTE
+    mundo = criaMundo(&TotalTerritorios);
     if (mundo == NULL) {
-        printf("Falha na alocação de memória.");
         return 1;
     }
 
@@ -175,9 +198,18 @@ int main() {
     cadastrarTerritorios(mundo, TotalTerritorios);
 
     //Chamando a função da fase de ataque enquanto não houver um vencedor
+    int sair = 0;
     do {
-        atacar(mundo, TotalTerritorios);
-    } while (verificarVencedor(mundo, TotalTerritorios) == 0);
+        sair = atacar(mundo, TotalTerritorios);
+    } while (sair == 0 && verificarVencedor(mundo, TotalTerritorios) == 0);
+
+    if (verificarVencedor(mundo, TotalTerritorios) == 1) {
+        exibirMapa(mundo, TotalTerritorios);
+        char corReferencia[TAM_COR];
+        strcpy(corReferencia, mundo[0].cor);
+        printf("\nO Exército %s conquistou todos os territórios e É O VENCEDOR!!!\n\n FIM DE JOGO", corReferencia);
+
+    }
 
     //LIBERANDO MEMÓRIA
     liberarMundo(mundo);
