@@ -178,6 +178,7 @@ void liberarMundo(struct Territorio *mundo) {
 }
 
 //FUNÇÃO PRINCIPAL 
+
 int main() {
     srand(time(NULL));
 
@@ -191,6 +192,7 @@ int main() {
     //CRIANDO TERRITÓRIOS E ALOCANDO MEMÓRIA DINAMICAMENTE
     mundo = criaMundo(&TotalTerritorios);
     if (mundo == NULL) {
+        printf("Falha na alocação de memória");
         return 1;
     }
 
